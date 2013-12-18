@@ -15,6 +15,7 @@ class ControllerBase
   end
 
   def already_rendered?
+    @already_built_response
   end
 
   def redirect_to(url)
@@ -38,6 +39,7 @@ class ControllerBase
   end
 
   def invoke_action(name)
+    send(name)
   end
 
   private
