@@ -11,7 +11,7 @@ trap('INT') { server.shutdown }
 
 class TestsController < ControllerBase
   def go
-    redirect_to( "http://www.googl.com")
+    # redirect_to( "http://www.googl.com")
 
 
     # after you have template rendering, uncomment:
@@ -19,9 +19,8 @@ class TestsController < ControllerBase
 
     # after you have sessions going, uncomment:
     # p session
-  #  session["count"] ||= 0
-  #  session["count"] += 1
-  #  render :counting_show
+   flash.now[:errors] = "There was an error!"
+   render :errors
   end
 end
 
