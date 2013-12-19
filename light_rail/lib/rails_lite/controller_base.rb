@@ -8,19 +8,18 @@ class ControllerBase
   def initialize(req, resp, route_params = {})
     @req, @resp = req, resp
     @params = Params.new(req, route_params)
+    @already_built_response = false
   end
 
-  def session(req = @req)
-    @session ||= Session.new(req)
-  end
-
-  def already_rendered?
-    @already_built_response
+  def session
+    @session ||= Session.new(@req)
   end
 
   def redirect_to(url)
+    raise "Already rendered or redirected" if already_responded?
     session.store_session(@resp)
-    @resp.set_redirect(WEBrick::HTTPStatus::TemporaryRedirect, url)
+    @resp['Location'] = url
+    @resp.status = 302
     @already_built_response = true
   end
 
@@ -32,7 +31,6 @@ class ControllerBase
   end
 
   def render(template_name)
-    @test_var = "Little Bunny Foo Foo"
     file_path = get_view_path(template_name)
     resp = ERB.new(File.read(file_path)).result(binding)
     render_content(resp, "text/html")
@@ -43,6 +41,10 @@ class ControllerBase
   end
 
   private
+
+  def already_responded?
+    @already_built_response
+  end
 
   def get_view_path(template_name)
     classpath = self.class.to_s

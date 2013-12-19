@@ -4,14 +4,14 @@ require 'debugger'
 
 class Session
   def initialize(req)
-    req.cookies.each do |cookie|
-      if cookie.name == "_light_rail_app"
-        @cookie = JSON.parse(cookie.value)
-      else
-        next
-      end
+    @cookie = extract_cookie(req) || {}
+  end
+
+  def extract_cookie(req)
+    cookie = req.cookies.find do |cookie|
+      cookie.name == "_light_rail_app"
     end
-    @cookie ||= {}
+    cookie && JSON.parse(cookie.value)
   end
 
   def [](key)

@@ -7,13 +7,25 @@ class Route
   end
 
   def matches?(req)
-    req.path =~ @pattern &&
-    req.request_method.downcase.to_sym == @http_method
+    (req.path =~ pattern) && (req.request_method.downcase.to_sym == http_method)
   end
 
   def run(req, resp)
-    @contoller_class.new(req, resp).invoke_action(action_name)
+    route_params = route_params(req)
+    @controller_class.new(req, resp, route_params).invoke_action(action_name)
   end
+
+  private
+
+  def route_params(req)
+    params= {}
+    data = @pattern.match(req.path)
+    data.names.each do |name|
+      params[name.to_sym] = data[name]
+    end
+    params
+  end
+
 end
 
 class Router
@@ -28,23 +40,26 @@ class Router
   end
 
   def draw(&proc)
-    @routes.concat(&proc.call)
+    self.instance_eval(&proc)
   end
 
   [:get, :post, :put, :delete].each do |http_method|
     define_method(http_method) do |pattern, controller, action|
-      @routes.concat(Route.new(pattern, http_method, controller, action))
+      @routes << (Route.new(pattern, http_method, controller, action))
     end
   end
 
   def match(req)
-    @routes.each do |route|
-      return route if route.matches?(req)
+    @routes.find do |route|
+      p route.pattern
+      p route.matches?(req)
+      route.matches?(req)
     end
   end
 
   def run(req, resp)
     route = match(req)
-    (route) ? route.run : resp.status = WEBrick::HTTPStatus::reason_phrase(404)
+    return resp.status = WEBrick::HTTPStatus[404] unless route
+    route.run(req, resp)
   end
 end
